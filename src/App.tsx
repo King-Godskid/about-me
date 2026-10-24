@@ -2,7 +2,6 @@ import { useState, type FormEvent } from 'react'
 import './App.css'
 
 type Place = {
-  id: number
   name: string
   latitude: number
   longitude: number
@@ -50,7 +49,6 @@ function weatherCondition(code: number): WeatherCondition {
 
 function App() {
   const [query, setQuery] = useState('')
-  const [places, setPlaces] = useState<Place[]>([])
   const [weather, setWeather] = useState<Weather | null>(null)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
@@ -58,7 +56,6 @@ function App() {
   async function loadWeather(place: Place) {
     setLoading(true)
     setMessage('')
-    setPlaces([])
     setWeather(null)
 
     try {
@@ -160,20 +157,18 @@ function App() {
 
     if (!searchTerm) {
       setMessage('Enter a city or place to get started.')
-      setPlaces([])
       setWeather(null)
       return
     }
 
     setLoading(true)
     setMessage('')
-    setPlaces([])
     setWeather(null)
 
     try {
       const params = new URLSearchParams({
         name: searchTerm,
-        count: '10',
+        count: '1',
         language: 'en',
         format: 'json',
       })
@@ -186,16 +181,14 @@ function App() {
       }
 
       const data: { results?: Place[] } = await response.json()
-      const matches = data.results ?? []
+      const place = data.results?.[0]
 
-      if (matches.length === 0) {
+      if (!place) {
         setMessage(
           'City not found. Please check the spelling and try again.',
         )
-      } else if (matches.length === 1) {
-        await loadWeather(matches[0])
       } else {
-        setPlaces(matches)
+        await loadWeather(place)
       }
     } catch {
       setMessage("We couldn't complete your search. Please try again.")
@@ -263,31 +256,6 @@ function App() {
           <p className="status-message status-error" role="status">
             {message}
           </p>
-        )}
-
-        {!loading && places.length > 1 && (
-          <div className="results">
-            <h2>Choose a place</h2>
-            <ul>
-              {places.map((place) => (
-                <li key={place.id}>
-                  <button
-                    className="place-option"
-                    type="button"
-                    onClick={() => loadWeather(place)}
-                  >
-                    <span className="place-name">{place.name}</span>
-                    <span className="place-details">
-                      {locationDetails(place)}
-                    </span>
-                    <span className="place-arrow" aria-hidden="true">
-                      →
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
         )}
 
         {weather && (
